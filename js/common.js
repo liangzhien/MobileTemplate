@@ -1,28 +1,30 @@
 define(function(require, exports, module) {
-	require("weixinApi");
 	require("fastclick");
-
+	// require("touch_load_banner");
 	FastClick.attach(document.body);
-	
+
 	var wxData = {
 		title : "",
 		link: "",
 		desc: "",
-		imgUrl: ""
+		imgUrl: "",
+		appid : ""
 	};
 
-	var _changeWxData = function(_data){
+	function changeWxData(_data){
 		_data.title && ( wxData.title = _data.title );
 		_data.desc && ( wxData.desc = _data.desc );
 		_data.imgUrl && ( wxData.imgUrl = _data.imgUrl );
-		_data.link && ( wxData.link = _data.link );
+		_data.link && ( wxData.link = _data.link )
 	}
 
-	var _shareSuccessCallBack = function(){};
+	var shareSuccessCallBack = function(){};
     var _shareSuccess = function(func){
-    	_shareSuccessCallBack = func;
+    	shareSuccessCallBack = func;
     }
+    var isShare = true;
 
+	WeixinApi.enableDebugMode();
 	WeixinApi.ready(function(Api) {
 		var wxCallbacks = {
 			ready : function() {
@@ -36,18 +38,20 @@ define(function(require, exports, module) {
 			},
 			confirm : function(resp) {
 				isShare = false;
-				_shareSuccessCallBack();
+				shareSuccessCallBack();
 			},
 			all : function(resp) {
-				isShare && _shareSuccessCallBack();
+				isShare && shareSuccessCallBack();
 			}
 		};
 		Api.shareToFriend(wxData, wxCallbacks);
 		Api.shareToTimeline(wxData, wxCallbacks);
 		Api.shareToWeibo(wxData, wxCallbacks);
-		WeixinJSBridge.call('showOptionMenu');
+		Api.generalShare(wxData,wxCallbacks);
+		Api.hook.enable(wxData,wxCallbacks);
 	});
 
-	window.changeWxData = _changeWxData;
+	window.changeWxData = changeWxData;
     window.shareSuccess = _shareSuccess;
+
 });

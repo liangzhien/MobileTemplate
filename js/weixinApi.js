@@ -26,7 +26,7 @@
      * 定义WeixinApi
      */
     var WeixinApi = {
-        version: 3.6
+        version: 3.91
     };
 
     // 将WeixinApi暴露到window下：全局可使用，对旧版本向下兼容
@@ -432,12 +432,17 @@
     /*
      * 打开扫描二维码
      * @param       {Object}    callbacks       回调方法
+     * @p-config    {Boolean}   needResult      是否直接获取分享后的内容
+     * @p-config    {String}    desc            扫描二维码时的描述
      * @p-config    {Function}  fail(resp)      失败
      * @p-config    {Function}  success(resp)   成功
      */
     WeixinApi.scanQRCode = function (callbacks) {
         callbacks = callbacks || {};
-        WeixinJSBridge.invoke("scanQRCode", {}, function (resp) {
+        WeixinJSBridge.invoke("scanQRCode", {
+            needResult: callbacks.needResult ? 1 : 0,
+            desc: callbacks.desc || 'WeixinApi Desc'
+        }, function (resp) {
             switch (resp.err_msg) {
                 // 打开扫描器成功
                 case 'scanQRCode:ok':
@@ -543,5 +548,120 @@
             }
         }
     };
+
+
+    /**
+     * 实在是没办法了，只能在微信内置的分享功能中加一个钩子，强行注入，并修改需要分享的内容
+     * 注意，仅Android可用，并且也不支持async模式了，暂时先这么用着吧，各位亲，总比不能用要好
+     */
+    WeixinApi.hook = (function () {
+        var _wxData;
+        var _callbacks;
+
+        /**
+         * 开启WeixinApi的hook功能
+         */
+        var _enable = function (wxData, wxCallbacks) {
+            _wxData = wxData;
+
+            // 分享过程中的一些回调
+            _callbacks = function (resp) {
+                var callbacks = wxCallbacks || {};
+                switch (true) {
+                    // 用户取消
+                    case /\:cancel$/i.test(resp.err_msg) :
+                        callbacks.cancel && callbacks.cancel(resp);
+                        break;
+                    // 发送成功
+                    case /\:(confirm|ok)$/i.test(resp.err_msg):
+                        callbacks.confirm && callbacks.confirm(resp);
+                        break;
+                    // fail　发送失败
+                    case /\:fail$/i.test(resp.err_msg) :
+                    default:
+                        callbacks.fail && callbacks.fail(resp);
+                        break;
+                }
+                // 无论成功失败都会执行的回调
+                callbacks.all && callbacks.all(resp);
+            };
+        };
+
+        /**
+         * 对内置的sendMessage加钩子
+         * @param message
+         */
+        var _message = function (message) {
+            var theData = _extend(message['__params'], _wxData);
+            theData.img_url = theData.imgUrl || theData.img_url;
+            delete theData.imgUrl;
+
+            switch (message['__event_id']) {
+                case 'menu:share:timeline':
+                    var t = theData.title;
+                    theData.title = theData.desc || t;
+                    theData.desc = t || theData.desc;
+                    message['__params'] = theData;
+                    break;
+                case 'menu:share:appmessage':
+                case 'menu:share:qq':
+                case 'menu:share:weiboApp':
+                    message['__params'] = theData;
+                    break;
+            }
+        };
+
+        /**
+         * 给各分享的回调方法加钩子
+         * @param shareType
+         * @param callback
+         */
+        var _callback = function (shareType, callback) {
+            switch (shareType) {
+                case 'sendAppMessage':
+                case 'shareTimeline':
+                case 'shareWeibo':
+                    callback = !callback ? _callbacks : function (resp) {
+                        callback(resp) && _callbacks(resp);
+                    };
+                    break;
+            }
+            return callback;
+        };
+
+        /**
+         * iOS简单处理，直接修改页面title
+         * @param wxData
+         * @private
+         */
+        var _forIOS = function (wxData) {
+            if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
+                document.title = wxData.desc;
+                var img = document.createElement('img');
+                img.style.position = 'absolute';
+                img.style.top = '-10000px';
+                img.style.left = '-10000px';
+                img.src = wxData.imgUrl;
+                document.body.insertBefore(img, document.body.childNodes[0]);
+
+                var params = {};
+                location.search.substr(1).split('&').forEach(function (arg) {
+                    var arr = arg.split('=');
+                    params[arr[0]] = arr[1];
+                });
+
+                if (params.hasOwnProperty('from') && params.hasOwnProperty('isappinstalled')) {
+                    window.location.href = wxData.link;
+                }
+            }
+        };
+
+        return {
+            enable: _enable,
+            message: _message,
+            callbacks: _callback,
+            forIOS: _forIOS
+        };
+    })();
 
 })(window);
