@@ -1,6 +1,5 @@
 define(function(require, exports, module) {
 	require("fastclick");
-	// require("touch_load_banner");
 	FastClick.attach(document.body);
 
 	var wxData = {
