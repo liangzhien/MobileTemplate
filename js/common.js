@@ -1,5 +1,6 @@
 define(function(require, exports, module) {
 	require("fastclick");
+	require("WeixinApi");
 	FastClick.attach(document.body);
 
 	var wxData = {
@@ -23,7 +24,6 @@ define(function(require, exports, module) {
     }
     var isShare = true;
 
-	WeixinApi.enableDebugMode();
 	WeixinApi.ready(function(Api) {
 		var wxCallbacks = {
 			ready : function() {
@@ -47,7 +47,6 @@ define(function(require, exports, module) {
 		Api.shareToTimeline(wxData, wxCallbacks);
 		Api.shareToWeibo(wxData, wxCallbacks);
 		Api.generalShare(wxData,wxCallbacks);
-		Api.hook.enable(wxData,wxCallbacks);
 	});
 
 	window.changeWxData = changeWxData;
