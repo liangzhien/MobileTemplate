@@ -22,32 +22,21 @@ define(function(require, exports, module) {
     var _shareSuccess = function(func){
     	shareSuccessCallBack = func;
     }
-    var isShare = true;
-
-	WeixinApi.ready(function(Api) {
-		var wxCallbacks = {
-			ready : function() {
-				isShare = true;
-			},
-			cancel : function(resp) {
-				isShare = false;
-			},
-			fail : function(resp) {
-				isShare = false;
-			},
-			confirm : function(resp) {
-				isShare = false;
-				shareSuccessCallBack();
-			},
-			all : function(resp) {
-				isShare && shareSuccessCallBack();
-			}
-		};
-		Api.shareToFriend(wxData, wxCallbacks);
-		Api.shareToTimeline(wxData, wxCallbacks);
-		Api.shareToWeibo(wxData, wxCallbacks);
-		Api.generalShare(wxData,wxCallbacks);
-	});
+    var wxCallbacks = {
+	    favorite : false,
+	    ready : function() {
+	    },
+	    cancel : function(resp) {
+	    },
+	    fail : function(resp) {
+	    },
+	    confirm : function(resp) {
+	        shareSuccessCallBack();
+	    },
+	    all : function(resp,shareTo) {
+	    }
+	};
+	WeixinApi.share(wxData,wxCallbacks);
 
 	window.changeWxData = changeWxData;
     window.shareSuccess = _shareSuccess;
