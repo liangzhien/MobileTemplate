@@ -15,7 +15,8 @@ define(function(require, exports, module) {
 		_data.title && ( wxData.title = _data.title );
 		_data.desc && ( wxData.desc = _data.desc );
 		_data.imgUrl && ( wxData.imgUrl = _data.imgUrl );
-		_data.link && ( wxData.link = _data.link )
+		_data.link && ( wxData.link = _data.link );
+		WeixinApi.share(wxData,wxCallbacks);
 	}
 
 	var shareSuccessCallBack = function(){};
