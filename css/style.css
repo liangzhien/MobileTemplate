@@ -11,3 +11,5 @@ input, textarea { outline: 0; resize: none; }
 html,body { font-size: 20px; height: 100%; }
 
 .wrap { position: relative; width: 640px; height: 100%; margin: 0 auto; }
+.loading { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #fff; z-index: 1; }
+.loading_data { position: absolute; top: 50%; left: 50%; width: 200px; height: 200px; margin: -100px 0 0 -100px; padding-top: 80px; text-align: center; font-size: 24px; color: #0c6294; background: url(../images/loading.gif) no-repeat top center; }

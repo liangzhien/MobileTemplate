@@ -10,7 +10,7 @@ define(function(require, exports, module) {
 	        }
 	    }
 	    var checkImg = function(url){
-	        var val= url+"?2014121712";
+	        var val= url;
 	        var img=new Image();
             img.onload=function(){
                 if(img.complete==true){
